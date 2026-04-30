@@ -1,0 +1,115 @@
+object Form2: TForm2
+  Left = 0
+  Top = 0
+  BorderStyle = bsToolWindow
+  Caption = 'AirMouse'
+  ClientHeight = 441
+  ClientWidth = 650
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  OnClose = FormClose
+  OnCreate = FormCreate
+  TextHeight = 15
+  object Label1: TLabel
+    Left = 8
+    Top = 39
+    Width = 16
+    Height = 15
+    Caption = '0 X'
+  end
+  object Label2: TLabel
+    Left = 8
+    Top = 60
+    Width = 16
+    Height = 15
+    Caption = '0 Y'
+  end
+  object Label3: TLabel
+    Left = 31
+    Top = 85
+    Width = 59
+    Height = 15
+    Caption = '0.8 smooth'
+  end
+  object Label4: TLabel
+    Left = 8
+    Top = 157
+    Width = 93
+    Height = 15
+    Caption = '0.8 Normalization'
+  end
+  object Button1: TButton
+    Left = 0
+    Top = 8
+    Width = 75
+    Height = 25
+    Caption = 'AirMouse'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+  object Button2: TButton
+    Left = 0
+    Top = 408
+    Width = 75
+    Height = 25
+    Caption = 'Test'
+    TabOrder = 1
+    OnClick = Button2Click
+  end
+  object TrackBar1: TTrackBar
+    Left = 0
+    Top = 106
+    Width = 113
+    Height = 45
+    Max = 20
+    TabOrder = 2
+    OnChange = TrackBar1Change
+  end
+  object TrackBar2: TTrackBar
+    Left = 0
+    Top = 178
+    Width = 113
+    Height = 45
+    Max = 19
+    TabOrder = 3
+    OnChange = TrackBar2Change
+  end
+  object Memo1: TMemo
+    Left = 304
+    Top = 48
+    Width = 185
+    Height = 89
+    Lines.Strings = (
+      'Memo1')
+    TabOrder = 4
+  end
+  object PythonEngine1: TPythonEngine
+    AutoLoad = False
+    DllName = 'python311.dll'
+    APIVersion = 1013
+    RegVersion = '3.11'
+    UseLastKnownVersion = False
+    IO = PythonGUIInputOutput1
+    Left = 128
+    Top = 24
+  end
+  object PythonModule1: TPythonModule
+    Engine = PythonEngine1
+    OnInitialization = PythonModule1Initialization
+    ModuleName = 'air_mouse'
+    Errors = <>
+    Left = 128
+    Top = 88
+  end
+  object PythonGUIInputOutput1: TPythonGUIInputOutput
+    UnicodeIO = True
+    RawOutput = False
+    Output = Memo1
+    Left = 128
+    Top = 152
+  end
+end
