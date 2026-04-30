@@ -78,6 +78,15 @@ object Form2: TForm2
     TabOrder = 3
     OnChange = TrackBar2Change
   end
+  object CheckBox1: TCheckBox
+    Left = 8
+    Top = 224
+    Width = 97
+    Height = 17
+    Caption = #1050#1077#1088#1091#1074#1072#1085#1085#1103
+    TabOrder = 4
+    OnClick = CheckBox1Click
+  end
   object PythonEngine1: TPythonEngine
     AutoLoad = False
     DllName = 'python311.dll'

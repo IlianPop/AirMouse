@@ -1,9 +1,10 @@
 object Form2: TForm2
   Left = 0
   Top = 0
+  BorderStyle = bsToolWindow
   Caption = 'AirMouse'
   ClientHeight = 441
-  ClientWidth = 136
+  ClientWidth = 118
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -77,16 +78,29 @@ object Form2: TForm2
     TabOrder = 3
     OnChange = TrackBar2Change
   end
+  object CheckBox1: TCheckBox
+    Left = 8
+    Top = 224
+    Width = 97
+    Height = 17
+    Caption = #1050#1077#1088#1091#1074#1072#1085#1085#1103
+    TabOrder = 4
+  end
   object PythonEngine1: TPythonEngine
-    Left = 376
-    Top = 64
+    AutoLoad = False
+    DllName = 'python311.dll'
+    APIVersion = 1013
+    RegVersion = '3.11'
+    UseLastKnownVersion = False
+    Left = 264
+    Top = 40
   end
   object PythonModule1: TPythonModule
     Engine = PythonEngine1
     OnInitialization = PythonModule1Initialization
     ModuleName = 'air_mouse'
     Errors = <>
-    Left = 360
-    Top = 232
+    Left = 256
+    Top = 104
   end
 end

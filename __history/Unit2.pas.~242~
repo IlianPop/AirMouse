@@ -19,8 +19,7 @@ type
     TrackBar1: TTrackBar;
     Label4: TLabel;
     TrackBar2: TTrackBar;
-    PythonGUIInputOutput1: TPythonGUIInputOutput;
-    Memo1: TMemo;
+    CheckBox1: TCheckBox;
     procedure Button1Click(Sender: TObject);
     procedure PythonModule1Initialization(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -28,6 +27,7 @@ type
     procedure TrackBar2Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure CheckBox1Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -43,6 +43,7 @@ var
   oldX, oldY:Double;
   smoothCoef:Double=0.2;
   normalCoef:Double=0.2;
+  controlOn:Integer=0;
 implementation
 
 {$R *.dfm}
@@ -72,12 +73,15 @@ begin
   y := y * Screen.Height;
   oldX := (oldX * (1-smoothCoef)+x*smoothCoef);
   oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
-  SetCursorPos(Round(oldX), Round(oldY));
   TThread.Queue(nil, procedure
   begin
     Form2.Label1.Caption := FloatToStr(Round(x)) + ' X';
     Form2.Label2.Caption := FloatToStr(Round(y)) + ' Y';
   end);
+  if controlOn = 1 then
+  begin
+    SetCursorPos(Round(oldX), Round(oldY));
+  end;
   Result := pyEngine.Py_None;
   pyEngine.Py_INCREF(Result);
 end;
@@ -126,7 +130,13 @@ end;
 
 procedure TForm2.Button2Click(Sender: TObject);
 begin
-  Label1.Caption := 'Новий текст';
+  PythonEngine1.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
+end;
+
+procedure TForm2.CheckBox1Click(Sender: TObject);
+begin
+  if CheckBox1.checked then controlOn := 1
+  else controlOn := 0;
 end;
 
 procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -135,17 +145,21 @@ begin
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
+  Ini.WriteString('settings', 'controlOn', IntToStr(controlOn));
   Ini.Free;
 end;
 
 procedure TForm2.FormCreate(Sender: TObject);
 var Ini:TIniFile;
 begin
+  PythonEngine1.UseLastKnownVersion := False;
   PythonEngine1.DllPath := ExtractFilePath(Application.ExeName) + 'python_env\';
   PythonEngine1.SetPythonHome(ExtractFilePath(Application.ExeName) + 'python_env\');
+  PythonEngine1.LoadDll;
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
   normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
+  controlOn := StrToInt(Ini.ReadString('settings', 'controlOn', '0'));
   Ini.Free;
   TrackBar1.Position := Round((1 - smoothCoef) * 20);
   TrackBar2.Position := Round(normalCoef * 60);
