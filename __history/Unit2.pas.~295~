@@ -60,27 +60,49 @@ begin
   if value < normalCoef then value := normalCoef;
   Result := (value - normalCoef) / (1 - 2 * normalCoef);
 end;
-function mouseControl(Self, Args:PPyObject):PPyObject;cdecl;
-var
-  pyEngine:TPythonEngine;
-  x, y: double;
+procedure mouseControl(x, y: Double);
 begin
-  pyEngine := GetPythonEngine;
-  pyEngine.PyArg_ParseTuple(Args, 'dd', @x, @y);
   x := normalizePosition(x);
   y := normalizePosition(y);
   x := x * Screen.Width;
   y := y * Screen.Height;
   oldX := (oldX * (1-smoothCoef)+x*smoothCoef);
   oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
-  TThread.Queue(nil, procedure
-  begin
-    Form2.Label1.Caption := FloatToStr(Round(x)) + ' X';
-    Form2.Label2.Caption := FloatToStr(Round(y)) + ' Y';
-  end);
   if controlOn = 1 then
   begin
     SetCursorPos(Round(oldX), Round(oldY));
+  end;
+  TThread.Queue(nil, procedure
+  begin
+    Form2.Label1.Caption := FloatToStr(x) + 'X';
+    Form2.Label2.Caption := FloatToStr(y) + 'Y';
+  end);
+end;
+procedure leftClick();
+begin
+  if controlOn = 1 then
+  begin
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    Sleep(50);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+  end;
+end;
+function setCoords(Self, Args:PPyObject):PPyObject;cdecl;
+var
+  pyEngine:TPythonEngine;
+  pyList:PPyObject;
+  i:Integer;
+  coords:array[0..41] of Double;
+begin
+  pyEngine := GetPythonEngine;
+  pyEngine.PyArg_ParseTuple(Args, 'O', @pyList);
+  for i  := 0 to 41 do
+    coords[i] := pyEngine.PyFloat_AsDouble(pyEngine.PyList_GetItem(pyList, i));
+  if controlOn = 1 then
+  begin
+    mouseControl(coords[2], coords[3]);
+    if Hypot(coords[8]-coords[16], coords[9]-coords[17]) < 0.005 then
+      leftClick();
   end;
   Result := pyEngine.Py_None;
   pyEngine.Py_INCREF(Result);
@@ -89,26 +111,28 @@ function minimazeWindows(Self, Args:PPyObject):PPyObject;cdecl;
 var pyEngine:TPythonEngine;
 begin
   pyEngine := GetPythonEngine;
-  keybd_event(VK_LWIN, 0, 0, 0);
-  keybd_event(ord('D'), 0, 0, 0);
-  keybd_event(ord('D'), 0, KEYEVENTF_KEYUP, 0);
-  keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+  if controlOn = 1 then
+  begin
+    keybd_event(VK_LWIN, 0, 0, 0);
+    keybd_event(ord('D'), 0, 0, 0);
+    keybd_event(ord('D'), 0, KEYEVENTF_KEYUP, 0);
+    keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+  end;
   Result := pyEngine.Py_None;
   pyEngine.Py_INCREF(Result);
 end;
-function leftClick(Self, Args:PPyObject):PPyObject;cdecl;
+function leftDoubleClick(Self, Args:PPyObject):PPyObject;cdecl;
 var pyEngine:TPythonEngine;
 begin
   pyEngine := GetPythonEngine;
-  mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-  Result := pyEngine.Py_None;
-  pyEngine.Py_INCREF(Result);
-end;
-function leftUnClick(Self, Args:PPyObject):PPyObject;cdecl;
-var pyEngine:TPythonEngine;
-begin
-  pyEngine := GetPythonEngine;
-  mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+  if controlOn = 1 then
+  begin
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    Sleep(50);
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+  end;
   Result := pyEngine.Py_None;
   pyEngine.Py_INCREF(Result);
 end;
@@ -116,9 +140,12 @@ function rightClick(Self, Args:PPyObject):PPyObject;cdecl;
 var pyEngine:TPythonEngine;
 begin
   pyEngine := GetPythonEngine;
-  mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
-  Sleep(50);
-  mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+  if controlOn = 1 then
+  begin
+    mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
+    Sleep(50);
+    mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+  end;
   Result := pyEngine.Py_None;
   pyEngine.Py_INCREF(Result);
 end;
@@ -171,11 +198,7 @@ end;
 
 procedure TForm2.PythonModule1Initialization(Sender: TObject);
 begin
-  PythonModule1.AddMethod('minimaze_window', minimazeWindows, 'minimaze all windows');
-  PythonModule1.AddMethod('left_click', leftClick, 'left click');
-  PythonModule1.AddMethod('left_un_click', leftUnClick, 'left unclick');
-  PythonModule1.AddMethod('right_click', rightClick, 'right click');
-  PythonModule1.AddMethod('set_cursor', mouseControl, 'set cursor');
+  PythonModule1.AddMethod('set_coords', setCoords, 'set coord');
 end;
 
 procedure TForm2.TrackBar1Change(Sender: TObject);
