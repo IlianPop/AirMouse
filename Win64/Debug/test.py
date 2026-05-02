@@ -19,7 +19,28 @@ while cap.isOpened():
         res = hand.process(frame)
         if res.multi_hand_landmarks:
             finded_hand = res.multi_hand_landmarks[0].landmark
-            air_mouse.set_coords([coord for point in finded_hand for coord in (point.x, point.y)])
+            coords = []
+            coords.append(finded_hand[1].x)
+            coords.append(finded_hand[1].y)
+            coords.append(finded_hand[4].x)
+            coords.append(finded_hand[4].y)
+            coords.append(finded_hand[5].x)
+            coords.append(finded_hand[5].y)
+            coords.append(finded_hand[8].x)
+            coords.append(finded_hand[8].y)
+            coords.append(finded_hand[9].x)
+            coords.append(finded_hand[9].y)
+            coords.append(finded_hand[12].x)
+            coords.append(finded_hand[12].y)
+            coords.append(finded_hand[13].x)
+            coords.append(finded_hand[13].y)
+            coords.append(finded_hand[16].x)
+            coords.append(finded_hand[16].y)
+            coords.append(finded_hand[17].x)
+            coords.append(finded_hand[17].y)
+            coords.append(finded_hand[20].x)
+            coords.append(finded_hand[20].y)
+            air_mouse.set_coords(coords)
         cv2.waitKey(1) & 0xFF
     else:
         break
