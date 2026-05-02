@@ -9,22 +9,23 @@ uses
 
 type
   TForm2 = class(TForm)
-    Button1: TButton;
     Label1: TLabel;
     PythonEngine1: TPythonEngine;
     PythonModule1: TPythonModule;
-    Button2: TButton;
     Label2: TLabel;
     Label3: TLabel;
     TrackBar1: TTrackBar;
     Label4: TLabel;
     TrackBar2: TTrackBar;
     CheckBox1: TCheckBox;
+    Label5: TLabel;
+    TrackBar3: TTrackBar;
     procedure Button1Click(Sender: TObject);
     procedure PythonModule1Initialization(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure TrackBar1Change(Sender: TObject);
     procedure TrackBar2Change(Sender: TObject);
+    procedure TrackBar3Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure CheckBox1Click(Sender: TObject);
@@ -43,6 +44,7 @@ var
   oldX, oldY:Double;
   smoothCoef:Double=0.2;
   normalCoef:Double=0.2;
+  clickCoef:Double=0.2;
   controlOn:Integer=0;
 implementation
 
@@ -70,8 +72,8 @@ begin
   oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
   TThread.Queue(nil, procedure
   begin
-    Form2.Label1.Caption := FloatToStr(x) + 'X';
-    Form2.Label2.Caption := FloatToStr(y) + 'Y';
+    Form2.Label1.Caption := FloatToStr(Round(x)) + 'X';
+    Form2.Label2.Caption := FloatToStr(Round(y)) + 'Y';
   end);
   if controlOn = 1 then
   begin
@@ -177,6 +179,7 @@ begin
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
+  Ini.WriteString('settings', 'clickCoef', FloatToStr(clickCoef));
   Ini.WriteString('settings', 'controlOn', IntToStr(controlOn));
   Ini.Free;
 end;
@@ -191,14 +194,18 @@ begin
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
   normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
+  clickCoef := StrToFloat(Ini.ReadString('settings', 'clickCoef', '0.2'));
   controlOn := StrToInt(Ini.ReadString('settings', 'controlOn', '0'));
   Ini.Free;
   if controlOn = 1 then CheckBox1.Checked := True
   else CheckBox1.Checked := False;
   TrackBar1.Position := Round((1 - smoothCoef) * 20);
   TrackBar2.Position := Round(normalCoef * 60);
+  TrackBar3.Position := Round(clickCoef * 20);
   Left := Screen.Width - Width;
   Top := Screen.WorkAreaHeight - Height;
+  PythonEngine1.PyEval_SaveThread;
+  TMyPythonThread.Create(false);
 end;
 
 procedure TForm2.PythonModule1Initialization(Sender: TObject);
@@ -208,12 +215,17 @@ end;
 
 procedure TForm2.TrackBar1Change(Sender: TObject);
 begin
-  Label3.Caption := FloatToStr(TrackBar1.Position / 20) + ' Smooth';
+  Label3.Caption := FloatToStr(TrackBar1.Position / 20) + ' smooth';
   smoothCoef := 1 - TrackBar1.Position / 20;
 end;
 procedure TForm2.TrackBar2Change(Sender: TObject);
 begin
-  Label4.Caption := FloatToStr(TrackBar2.Position / 20) + ' Normalization';
+  Label4.Caption := FloatToStr(TrackBar2.Position / 20) + ' normalization';
   normalCoef := TrackBar2.Position / 60;
+end;
+procedure TForm2.TrackBar3Change(Sender: TObject);
+begin
+  Label4.Caption := FloatToStr(TrackBar3.Position / 20) + ' click';
+  clickCoef := TrackBar3.Position / 60;
 end;
 end.
