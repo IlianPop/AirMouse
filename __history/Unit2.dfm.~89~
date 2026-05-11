@@ -3,8 +3,8 @@ object Form2: TForm2
   Top = 0
   BorderStyle = bsToolWindow
   Caption = 'AirMouse'
-  ClientHeight = 225
-  ClientWidth = 118
+  ClientHeight = 299
+  ClientWidth = 512
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -38,21 +38,77 @@ object Form2: TForm2
   object Label4: TLabel
     Left = 8
     Top = 125
-    Width = 93
+    Width = 91
     Height = 15
-    Caption = '0.8 Normalization'
+    Caption = '0.8 normalization'
+  end
+  object Label5: TLabel
+    Left = 31
+    Top = 197
+    Width = 42
+    Height = 15
+    Caption = '0.8 click'
+  end
+  object Label6: TLabel
+    Left = 416
+    Top = 48
+    Width = 34
+    Height = 15
+    Caption = 'Label6'
+  end
+  object Label7: TLabel
+    Left = 424
+    Top = 80
+    Width = 34
+    Height = 15
+    Caption = 'Label7'
+  end
+  object Label8: TLabel
+    Left = 432
+    Top = 112
+    Width = 34
+    Height = 15
+    Caption = 'Label8'
+  end
+  object Label9: TLabel
+    Left = 432
+    Top = 152
+    Width = 34
+    Height = 15
+    Caption = 'Label9'
+  end
+  object Label10: TLabel
+    Left = 440
+    Top = 184
+    Width = 40
+    Height = 15
+    Caption = 'Label10'
+  end
+  object Label11: TLabel
+    Left = 418
+    Top = 224
+    Width = 40
+    Height = 15
+    Caption = 'Label11'
+  end
+  object Label12: TLabel
+    Left = 432
+    Top = 245
+    Width = 40
+    Height = 15
+    Caption = 'Label12'
   end
   object TrackBar1: TTrackBar
     Left = 0
     Top = 74
     Width = 113
     Height = 45
-    Max = 20
+    Max = 19
     TabOrder = 0
     OnChange = TrackBar1Change
   end
   object TrackBar2: TTrackBar
-    Left = 0
+    Left = -2
     Top = 146
     Width = 113
     Height = 45
@@ -62,12 +118,23 @@ object Form2: TForm2
   end
   object CheckBox1: TCheckBox
     Left = 8
-    Top = 192
+    Top = 272
     Width = 97
     Height = 17
     Caption = #1050#1077#1088#1091#1074#1072#1085#1085#1103
     TabOrder = 2
     OnClick = CheckBox1Click
+  end
+  object TrackBar3: TTrackBar
+    Left = -3
+    Top = 221
+    Width = 113
+    Height = 45
+    Max = 20
+    Min = 1
+    Position = 1
+    TabOrder = 3
+    OnChange = TrackBar3Change
   end
   object PythonEngine1: TPythonEngine
     AutoLoad = False

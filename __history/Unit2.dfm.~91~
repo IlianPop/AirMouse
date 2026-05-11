@@ -4,7 +4,7 @@ object Form2: TForm2
   BorderStyle = bsToolWindow
   Caption = 'AirMouse'
   ClientHeight = 299
-  ClientWidth = 949
+  ClientWidth = 512
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -50,18 +50,60 @@ object Form2: TForm2
     Caption = '0.8 click'
   end
   object Label6: TLabel
-    Left = 112
-    Top = 8
+    Left = 376
+    Top = 28
     Width = 34
     Height = 15
     Caption = 'Label6'
   end
   object Label7: TLabel
-    Left = 112
-    Top = 29
+    Left = 376
+    Top = 49
     Width = 34
     Height = 15
     Caption = 'Label7'
+  end
+  object Label8: TLabel
+    Left = 376
+    Top = 70
+    Width = 34
+    Height = 15
+    Caption = 'Label8'
+  end
+  object Label9: TLabel
+    Left = 376
+    Top = 91
+    Width = 34
+    Height = 15
+    Caption = 'Label9'
+  end
+  object Label10: TLabel
+    Left = 376
+    Top = 112
+    Width = 40
+    Height = 15
+    Caption = 'Label10'
+  end
+  object Label11: TLabel
+    Left = 376
+    Top = 133
+    Width = 40
+    Height = 15
+    Caption = 'Label11'
+  end
+  object Label12: TLabel
+    Left = 376
+    Top = 154
+    Width = 40
+    Height = 15
+    Caption = 'Label12'
+  end
+  object Label13: TLabel
+    Left = 376
+    Top = 175
+    Width = 40
+    Height = 15
+    Caption = 'Label13'
   end
   object TrackBar1: TTrackBar
     Left = 0

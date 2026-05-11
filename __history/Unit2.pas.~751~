@@ -151,7 +151,7 @@ begin
   gesture := 0;
   if pyEngine.PyArg_ParseTuple(Args, 'n', @coords) <> 0 then
   begin
-    mouseControl(coords^[2], coords^[3]);
+    mouseControl(coords^[24], coords^[25]);
     w := getDistance(coords^[10], coords^[11], coords^[34], coords^[35]);
     h := getDistance(coords^[0], coords^[1], coords^[18], coords^[19]);
     r := coords^[11]-coords^[35];
@@ -204,7 +204,7 @@ begin
     ]);
     end);
 
-    if (gesture = 272) and canExecute(500) then changeMode;
+    if ((gesture = 281) or (gesture = 273)) and canExecute(300) then changeMode;
     if controlOn then
       begin
       case gesture of
@@ -222,7 +222,7 @@ begin
             rightClick();
           end
         end;
-        128, 129:
+        129:
         begin
           if canExecute(300) then
           begin
@@ -252,6 +252,11 @@ begin
             lessVolume;
           end
           end;
+        end;
+        272:
+        begin
+          if canExecute(300) then
+
         end;
       end;
     end;

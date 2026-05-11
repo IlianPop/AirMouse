@@ -3,8 +3,8 @@ object Form2: TForm2
   Top = 0
   BorderStyle = bsToolWindow
   Caption = 'AirMouse'
-  ClientHeight = 305
-  ClientWidth = 118
+  ClientHeight = 299
+  ClientWidth = 949
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -49,17 +49,31 @@ object Form2: TForm2
     Height = 15
     Caption = '0.8 click'
   end
+  object Label6: TLabel
+    Left = 112
+    Top = 8
+    Width = 34
+    Height = 15
+    Caption = 'Label6'
+  end
+  object Label7: TLabel
+    Left = 112
+    Top = 29
+    Width = 34
+    Height = 15
+    Caption = 'Label7'
+  end
   object TrackBar1: TTrackBar
     Left = 0
     Top = 74
     Width = 113
     Height = 45
-    Max = 20
+    Max = 19
     TabOrder = 0
     OnChange = TrackBar1Change
   end
   object TrackBar2: TTrackBar
-    Left = 0
+    Left = -2
     Top = 146
     Width = 113
     Height = 45
@@ -81,9 +95,11 @@ object Form2: TForm2
     Top = 221
     Width = 113
     Height = 45
-    Max = 19
+    Max = 20
+    Min = 1
+    Position = 1
     TabOrder = 3
-    OnChange = TrackBar2Change
+    OnChange = TrackBar3Change
   end
   object PythonEngine1: TPythonEngine
     AutoLoad = False
