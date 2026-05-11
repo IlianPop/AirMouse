@@ -165,7 +165,7 @@ begin
     c1 := getDistance(coords^[8], coords^[9], coords^[32], coords^[33]) / w;
     d1 := getDistance(coords^[8], coords^[9], coords^[40], coords^[41]) / w;
     if a < clickCoef then gesture := gesture or 1;
-    if b / 5 < clickCoef then gesture := gesture or 2;
+    if b / 4 < clickCoef then gesture := gesture or 2;
     if c / 5 < clickCoef then gesture := gesture or 4;
     if d / 5 < clickCoef then gesture := gesture or 8;
     if e / 5 < clickCoef then gesture := gesture or 16;
@@ -178,7 +178,7 @@ begin
       Form2.Label6.Caption := Format('a=%.2f b=%.2f c=%.2f d=%.2f e=%.2f a1=%.2f b1=%.2f c1=%.2f d1=%.2f w=%.2f gesture=%d r=%.2f',
     [
       a,
-      b / 5,
+      b / 4,
       c / 5,
       d / 5,
       e / 5,
@@ -193,7 +193,7 @@ begin
     Form2.Label7.Caption := Format('a=%s b=%s c=%s d=%s e=%s a1=%s b1=%s c1=%s d1=%s',
     [
       BoolToStr(a < clickCoef),
-      BoolToStr(b / 5 < clickCoef),
+      BoolToStr(b / 4 < clickCoef),
       BoolToStr(c / 5 < clickCoef),
       BoolToStr(d / 5 < clickCoef),
       BoolToStr(e / 5 < clickCoef),
@@ -208,7 +208,7 @@ begin
     if controlOn then
       begin
       case gesture of
-        33:
+        32, 33:
         begin
           if canExecute(300) then
           begin
@@ -222,7 +222,7 @@ begin
             rightClick();
           end
         end;
-        128, 129:
+        96, 97:
         begin
           if canExecute(300) then
           begin
@@ -251,6 +251,21 @@ begin
           begin
             lessVolume;
           end
+          end;
+        end;
+        28:
+        begin
+          if Form2.Visible and canExecute(500) then
+          begin
+            Form2.Hide
+          end
+          else
+          begin
+            if canExecute(700) then
+            begin
+              Form2.Show;
+              Form2.BringToFront;
+            end;
           end;
         end;
       end;
