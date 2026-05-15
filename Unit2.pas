@@ -51,6 +51,7 @@ var
   controlOn:Boolean=False;
   smoothDist:Double=0;
   lastGestureTime:Integer=0;
+  screenNum:Byte=0;
   isDrag:Boolean=False;
 implementation
 
@@ -61,6 +62,11 @@ begin
   pyEngine := GetPythonEngine;
   FreeOnTerminate := true;
   pyEngine.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
+end;
+procedure switchScreen;
+begin
+  screenNum := screenNum + 1;
+  if Screen.MonitorCount = screenNum then screenNum := 0;
 end;
 function canExecute(delayMs: Integer):Boolean;
 begin
@@ -82,8 +88,8 @@ procedure mouseControl(x, y: Double);
 begin
   x := normalizePosition(x);
   y := normalizePosition(y);
-  x := x * Screen.Width;
-  y := y * Screen.Height;
+  x := Screen.Monitors[screenNum].Left + x * Screen.Monitors[screenNum].Width;
+  y := Screen.Monitors[screenNum].Top + y * Screen.Monitors[screenNum].Height;
   oldX := (oldX * (1-smoothCoef)+x*smoothCoef);
   oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
   TThread.Queue(nil, procedure
@@ -139,6 +145,11 @@ procedure moreVolume;
 begin
   keybd_event(VK_VOLUME_UP, 0, 0, 0);
   keybd_event(VK_VOLUME_UP, 0, KEYEVENTF_KEYUP, 0);
+end;
+procedure muteVolume;
+begin
+  keybd_event(VK_VOLUME_MUTE, 0, 0, 0);
+  keybd_event(VK_VOLUME_MUTE, 0, KEYEVENTF_KEYUP, 0);
 end;
 function setCoords(Self, Args:PPyObject):PPyObject;cdecl;
 var
@@ -215,7 +226,7 @@ begin
             leftClick();
           end
         end;
-        65:
+        65, 68:
         begin
           if canExecute(300) then
           begin
@@ -267,6 +278,19 @@ begin
               Form2.BringToFront;
             end;
           end;
+        end;
+        92:
+        begin
+          if canExecute(1000) then
+          begin
+            muteVolume;
+          end;
+        end;
+        12:
+        begin
+          if canExecute(1000) then
+
+          switchScreen;
         end;
       end;
     end;
