@@ -1,0 +1,102 @@
+object Form2: TForm2
+  Left = 0
+  Top = 0
+  BorderStyle = bsToolWindow
+  Caption = 'AirMouse'
+  ClientHeight = 287
+  ClientWidth = 109
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  OnClose = FormClose
+  OnCreate = FormCreate
+  TextHeight = 15
+  object Label3: TLabel
+    Left = 31
+    Top = 5
+    Width = 59
+    Height = 15
+    Caption = '0.8 smooth'
+  end
+  object Label4: TLabel
+    Left = 8
+    Top = 77
+    Width = 91
+    Height = 15
+    Caption = '0.8 normalization'
+  end
+  object Label5: TLabel
+    Left = 31
+    Top = 149
+    Width = 42
+    Height = 15
+    Caption = '0.8 click'
+  end
+  object TrackBar1: TTrackBar
+    Left = 0
+    Top = 26
+    Width = 113
+    Height = 45
+    Max = 19
+    TabOrder = 0
+    OnChange = TrackBar1Change
+  end
+  object TrackBar2: TTrackBar
+    Left = -2
+    Top = 98
+    Width = 113
+    Height = 45
+    Max = 19
+    TabOrder = 1
+    OnChange = TrackBar2Change
+  end
+  object CheckBox1: TCheckBox
+    Left = 8
+    Top = 224
+    Width = 97
+    Height = 17
+    Caption = 'Control'
+    TabOrder = 2
+    OnClick = CheckBox1Click
+  end
+  object TrackBar3: TTrackBar
+    Left = -3
+    Top = 173
+    Width = 113
+    Height = 45
+    Max = 20
+    Min = 1
+    Position = 1
+    TabOrder = 3
+    OnChange = TrackBar3Change
+  end
+  object Button1: TButton
+    Left = 15
+    Top = 256
+    Width = 75
+    Height = 25
+    Caption = 'Manual'
+    TabOrder = 4
+    OnClick = Button1Click
+  end
+  object PythonEngine1: TPythonEngine
+    AutoLoad = False
+    DllName = 'python311.dll'
+    APIVersion = 1013
+    RegVersion = '3.11'
+    UseLastKnownVersion = False
+    Left = 264
+    Top = 40
+  end
+  object PythonModule1: TPythonModule
+    Engine = PythonEngine1
+    OnInitialization = PythonModule1Initialization
+    ModuleName = 'air_mouse'
+    Errors = <>
+    Left = 256
+    Top = 104
+  end
+end

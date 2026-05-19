@@ -3,17 +3,15 @@ unit Unit2;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, PythonEngine, Math, IniFiles,
-  Vcl.PythonGUIInputOutput, Vcl.ComCtrls;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.Devices, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, PythonEngine, Math, IniFiles, FMX.Media,
+  Vcl.PythonGUIInputOutput, Vcl.ComCtrls, ShellAPI;
 type
   PDoubleArray = ^TDoubleArray;
   TDoubleArray = array[0..100] of Double;
   TForm2 = class(TForm)
-    Label1: TLabel;
     PythonEngine1: TPythonEngine;
     PythonModule1: TPythonModule;
-    Label2: TLabel;
     Label3: TLabel;
     TrackBar1: TTrackBar;
     Label4: TLabel;
@@ -21,8 +19,8 @@ type
     CheckBox1: TCheckBox;
     Label5: TLabel;
     TrackBar3: TTrackBar;
-    Label6: TLabel;
-    Label7: TLabel;
+    Button1: TButton;
+    Button2: TButton;
     procedure Button1Click(Sender: TObject);
     procedure PythonModule1Initialization(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -53,6 +51,8 @@ var
   lastGestureTime:Integer=0;
   screenNum:Byte=0;
   isDrag:Boolean=False;
+  cameras: array of string;
+  currentCameraNum: Integer;
 implementation
 
 {$R *.dfm}
@@ -62,6 +62,18 @@ begin
   pyEngine := GetPythonEngine;
   FreeOnTerminate := true;
   pyEngine.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
+end;
+procedure getCameras;
+var i:Byte;
+begin
+  for i := 0 to TCaptureDeviceManager.Current.Count - 1 do
+  begin
+    if TCaptureDeviceManager.Current.Devices[i].MediaType = TMediaType.Video then
+    begin
+      SetLength(cameras, Length(cameras)+1);
+      cameras[Length(cameras)-1] := TCaptureDeviceManager.Current.Devices[i].Name;
+    end;
+  end;
 end;
 procedure switchScreen;
 begin
@@ -92,11 +104,6 @@ begin
   y := Screen.Monitors[screenNum].Top + y * Screen.Monitors[screenNum].Height;
   oldX := (oldX * (1-smoothCoef)+x*smoothCoef);
   oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
-  TThread.Queue(nil, procedure
-  begin
-    Form2.Label1.Caption := FloatToStr(Round(x)) + 'X';
-    Form2.Label2.Caption := FloatToStr(Round(y)) + 'Y';
-  end);
   if controlOn then
   begin
     SetCursorPos(Round(oldX), Round(oldY));
@@ -184,37 +191,6 @@ begin
     if b1 < clickCoef then gesture := gesture or 64;
     if c1 < clickCoef then gesture := gesture or 128;
     if d1 < clickCoef then gesture := gesture or 256;
-    TThread.Queue(nil, procedure
-    begin
-      Form2.Label6.Caption := Format('a=%.2f b=%.2f c=%.2f d=%.2f e=%.2f a1=%.2f b1=%.2f c1=%.2f d1=%.2f w=%.2f gesture=%d r=%.2f',
-    [
-      a,
-      b / 4,
-      c / 5,
-      d / 5,
-      e / 5,
-      a1,
-      b1,
-      c1,
-      d1,
-      w,
-      gesture,
-      r
-    ]);
-    Form2.Label7.Caption := Format('a=%s b=%s c=%s d=%s e=%s a1=%s b1=%s c1=%s d1=%s',
-    [
-      BoolToStr(a < clickCoef),
-      BoolToStr(b / 4 < clickCoef),
-      BoolToStr(c / 5 < clickCoef),
-      BoolToStr(d / 5 < clickCoef),
-      BoolToStr(e / 5 < clickCoef),
-      BoolToStr(a1 < clickCoef),
-      BoolToStr(b1 < clickCoef),
-      BoolToStr(c1 < clickCoef),
-      BoolToStr(d1 < clickCoef)
-    ]);
-    end);
-
     if (gesture = 272) and canExecute(500) then changeMode;
     if controlOn then
       begin
@@ -316,15 +292,14 @@ begin
 end;
 procedure TForm2.Button1Click(Sender: TObject);
 begin
-  PythonEngine1.PyEval_SaveThread;
-  TMyPythonThread.Create(false);
+  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.jpg'), nil, nil, SW_SHOWNORMAL);
 end;
-
 procedure TForm2.Button2Click(Sender: TObject);
 begin
-  PythonEngine1.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
+  currentCameraNum := currentCameraNum + 1;
+  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
+  Button2.Caption := cameras[currentCameraNum];
 end;
-
 procedure TForm2.CheckBox1Click(Sender: TObject);
 begin
   controlOn := CheckBox1.checked;
@@ -360,6 +335,10 @@ begin
   TrackBar3.Position := Round(clickCoef * 20);
   Left := Screen.Width - Width;
   Top := Screen.WorkAreaHeight - Height;
+  currentCameraNum := 0;
+  getCameras;
+  if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
+  else Button2.Caption := 'Not founded';
   PythonEngine1.PyEval_SaveThread;
   TMyPythonThread.Create(false);
 end;
