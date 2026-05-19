@@ -53,6 +53,7 @@ var
   isDrag:Boolean=False;
   cameras: array of string;
   currentCameraNum: Integer;
+  pythonTheard: TMyPythonThread;
 implementation
 
 {$R *.dfm}
@@ -60,7 +61,6 @@ procedure TMyPythonThread.ExecuteWithPython;
 var pyEngine:TPythonEngine;
 begin
   pyEngine := GetPythonEngine;
-  FreeOnTerminate := true;
   pyEngine.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
 end;
 procedure getCameras;
@@ -295,10 +295,15 @@ begin
   ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.jpg'), nil, nil, SW_SHOWNORMAL);
 end;
 procedure TForm2.Button2Click(Sender: TObject);
+var
+  status: PyGILState_STATE;
 begin
   currentCameraNum := currentCameraNum + 1;
   if currentCameraNum = Length(cameras) then currentCameraNum := 0;
   Button2.Caption := cameras[currentCameraNum];
+  status := PythonEngine1.PyGILState_Ensure;
+  PythonEngine1.ExecString('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum));
+  PythonEngine1.PyGILState_Release(status);
 end;
 procedure TForm2.CheckBox1Click(Sender: TObject);
 begin
@@ -307,7 +312,17 @@ end;
 
 procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
 var Ini:TIniFile;
+status: PyGILState_STATE;
 begin
+  if Assigned(pythonTheard) then
+  begin
+    status := PythonEngine1.PyGILState_Ensure;
+    PythonEngine1.ExecString('import air_mouse; air_mouse.stop_thread = True');
+    PythonEngine1.PyGILState_Release(status);
+    pythonTheard.Terminate;
+    pythonTheard.WaitFor;
+    FreeAndNil(pythonTheard);
+  end;
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
@@ -340,7 +355,7 @@ begin
   if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
   else Button2.Caption := 'Not founded';
   PythonEngine1.PyEval_SaveThread;
-  TMyPythonThread.Create(false);
+  pythonTheard := TMyPythonThread.Create(false);
 end;
 
 procedure TForm2.PythonModule1Initialization(Sender: TObject);

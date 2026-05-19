@@ -17,21 +17,21 @@ object Form2: TForm2
   object Label3: TLabel
     Left = 8
     Top = 8
-    Width = 185
+    Width = 59
     Height = 15
     Caption = '0.8 smooth'
   end
   object Label4: TLabel
     Left = 8
     Top = 80
-    Width = 185
+    Width = 91
     Height = 15
     Caption = '0.8 normalization'
   end
   object Label5: TLabel
     Left = 8
     Top = 152
-    Width = 185
+    Width = 42
     Height = 15
     Caption = '0.8 click'
   end
