@@ -3,7 +3,7 @@ object Form2: TForm2
   Top = 0
   BorderStyle = bsToolWindow
   Caption = 'AirMouse'
-  ClientHeight = 325
+  ClientHeight = 322
   ClientWidth = 202
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET

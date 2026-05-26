@@ -48,7 +48,7 @@ var
   clickCoef:Double=0.2;
   controlOn:Boolean=False;
   smoothDist:Double=0;
-  lastGestureTime:Integer=0;
+  lastGestureTime:Cardinal=0;
   screenNum:Byte=0;
   isDrag:Boolean=False;
   cameras: array of string;
@@ -112,14 +112,11 @@ end;
 procedure rightClick();
 begin
   mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
-  Sleep(20);
   mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
 end;
 procedure leftClick();
-var dist:Double;
 begin
   mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
-  Sleep(20);
   mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
 end;
 procedure changeMode();
@@ -162,8 +159,8 @@ function setCoords(Self, Args:PPyObject):PPyObject;cdecl;
 var
   pyEngine:TPythonEngine;
   coords :PDoubleArray;
-  i, gesture:Integer;
-  a, b, c, d, e, f, g, a1, b1, c1, d1, w, h, r:Double;
+  gesture:Integer;
+  a, b, c, d, e, a1, b1, c1, d1, w, r:Double;
 begin
   pyEngine := GetPythonEngine;
   gesture := 0;
@@ -171,7 +168,6 @@ begin
   begin
     mouseControl(coords^[2], coords^[3]);
     w := getDistance(coords^[10], coords^[11], coords^[34], coords^[35]);
-    h := getDistance(coords^[0], coords^[1], coords^[18], coords^[19]);
     r := coords^[11]-coords^[35];
     a := getDistance(coords^[12], coords^[13], coords^[8], coords^[9]) / w;
     b := getDistance(coords^[0], coords^[1], coords^[16], coords^[17]) / w;
@@ -202,7 +198,7 @@ begin
             leftClick();
           end
         end;
-        65, 68:
+        2:
         begin
           if canExecute(300) then
           begin
@@ -283,7 +279,6 @@ begin
   begin
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
-    Sleep(50);
     mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
     mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
   end;
@@ -292,7 +287,7 @@ begin
 end;
 procedure TForm2.Button1Click(Sender: TObject);
 begin
-  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.jpg'), nil, nil, SW_SHOWNORMAL);
+  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.png'), nil, nil, SW_SHOWNORMAL);
 end;
 procedure TForm2.Button2Click(Sender: TObject);
 var

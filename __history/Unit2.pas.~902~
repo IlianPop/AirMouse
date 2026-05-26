@@ -1,0 +1,378 @@
+unit Unit2;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.Devices, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, PythonEngine, Math, IniFiles, FMX.Media,
+  Vcl.PythonGUIInputOutput, Vcl.ComCtrls, ShellAPI;
+type
+  PDoubleArray = ^TDoubleArray;
+  TDoubleArray = array[0..100] of Double;
+  TForm2 = class(TForm)
+    PythonEngine1: TPythonEngine;
+    PythonModule1: TPythonModule;
+    Label3: TLabel;
+    TrackBar1: TTrackBar;
+    Label4: TLabel;
+    TrackBar2: TTrackBar;
+    CheckBox1: TCheckBox;
+    Label5: TLabel;
+    TrackBar3: TTrackBar;
+    Button1: TButton;
+    Button2: TButton;
+    procedure Button1Click(Sender: TObject);
+    procedure PythonModule1Initialization(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure TrackBar1Change(Sender: TObject);
+    procedure TrackBar2Change(Sender: TObject);
+    procedure TrackBar3Change(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure CheckBox1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+  TMyPythonThread = class(TPythonThread)
+  protected
+    procedure ExecuteWithPython; override;
+  end;
+
+var
+  Form2: TForm2;
+  oldX, oldY:Double;
+  smoothCoef:Double=0.2;
+  normalCoef:Double=0.2;
+  clickCoef:Double=0.2;
+  controlOn:Boolean=False;
+  smoothDist:Double=0;
+  lastGestureTime:Integer=0;
+  screenNum:Byte=0;
+  isDrag:Boolean=False;
+  cameras: array of string;
+  currentCameraNum: Integer;
+  pythonTheard: TMyPythonThread;
+implementation
+
+{$R *.dfm}
+procedure TMyPythonThread.ExecuteWithPython;
+var pyEngine:TPythonEngine;
+begin
+  pyEngine := GetPythonEngine;
+  pyEngine.ExecFile(ExtractFilePath(Application.ExeName)+'test.py');
+end;
+procedure getCameras;
+var i:Byte;
+begin
+  for i := 0 to TCaptureDeviceManager.Current.Count - 1 do
+  begin
+    if TCaptureDeviceManager.Current.Devices[i].MediaType = TMediaType.Video then
+    begin
+      SetLength(cameras, Length(cameras)+1);
+      cameras[Length(cameras)-1] := TCaptureDeviceManager.Current.Devices[i].Name;
+    end;
+  end;
+end;
+procedure switchScreen;
+begin
+  screenNum := screenNum + 1;
+  if Screen.MonitorCount = screenNum then screenNum := 0;
+end;
+function canExecute(delayMs: Integer):Boolean;
+begin
+  Result := GetTickCount - lastGestureTime > delayMs;
+  if Result then lastGestureTime := GetTickCount;
+
+end;
+function getDistance(x1, y1, x2, y2:Double):Double;
+begin
+  Result := Hypot(x1-x2, y1-y2);
+end;
+function normalizePosition(value :Double):Double;
+begin
+  if value > (1-normalCoef) then value := 1 - normalCoef;
+  if value < normalCoef then value := normalCoef;
+  Result := (value - normalCoef) / (1 - 2 * normalCoef);
+end;
+procedure mouseControl(x, y: Double);
+begin
+  x := normalizePosition(x);
+  y := normalizePosition(y);
+  x := Screen.Monitors[screenNum].Left + x * Screen.Monitors[screenNum].Width;
+  y := Screen.Monitors[screenNum].Top + y * Screen.Monitors[screenNum].Height;
+  oldX := (oldX * (1-smoothCoef)+x*smoothCoef);
+  oldY := (oldY * (1-smoothCoef)+y*smoothCoef);
+  if controlOn then
+  begin
+    SetCursorPos(Round(oldX), Round(oldY));
+  end;
+end;
+procedure rightClick();
+begin
+  mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
+  mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0);
+end;
+procedure leftClick();
+var dist:Double;
+begin
+  mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+  mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+end;
+procedure changeMode();
+begin
+  controlOn := not controlOn;
+  TThread.Queue(nil, procedure
+  begin
+    Form2.CheckBox1.Checked := controlOn
+  end);
+end;
+procedure dragClick();
+begin
+  isDrag := not isDrag;
+  if isDrag then mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+  else mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+end;
+procedure minimazeWindows;
+begin
+  keybd_event(VK_LWIN, 0, 0, 0);
+  keybd_event(ord('D'), 0, 0, 0);
+  keybd_event(ord('D'), 0, KEYEVENTF_KEYUP, 0);
+  keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, 0);
+end;
+procedure lessVolume;
+begin
+  keybd_event(VK_VOLUME_DOWN, 0, 0, 0);
+  keybd_event(VK_VOLUME_DOWN, 0, KEYEVENTF_KEYUP, 0);
+end;
+procedure moreVolume;
+begin
+  keybd_event(VK_VOLUME_UP, 0, 0, 0);
+  keybd_event(VK_VOLUME_UP, 0, KEYEVENTF_KEYUP, 0);
+end;
+procedure muteVolume;
+begin
+  keybd_event(VK_VOLUME_MUTE, 0, 0, 0);
+  keybd_event(VK_VOLUME_MUTE, 0, KEYEVENTF_KEYUP, 0);
+end;
+function setCoords(Self, Args:PPyObject):PPyObject;cdecl;
+var
+  pyEngine:TPythonEngine;
+  coords :PDoubleArray;
+  i, gesture:Integer;
+  a, b, c, d, e, a1, b1, c1, d1, w, h, r:Double;
+begin
+  pyEngine := GetPythonEngine;
+  gesture := 0;
+  if pyEngine.PyArg_ParseTuple(Args, 'n', @coords) <> 0 then
+  begin
+    mouseControl(coords^[2], coords^[3]);
+    w := getDistance(coords^[10], coords^[11], coords^[34], coords^[35]);
+    h := getDistance(coords^[0], coords^[1], coords^[18], coords^[19]);
+    r := coords^[11]-coords^[35];
+    a := getDistance(coords^[12], coords^[13], coords^[8], coords^[9]) / w;
+    b := getDistance(coords^[0], coords^[1], coords^[16], coords^[17]) / w;
+    c := getDistance(coords^[0], coords^[1], coords^[24], coords^[25]) / w;
+    d := getDistance(coords^[0], coords^[1], coords^[32], coords^[33]) / w;
+    e := getDistance(coords^[0], coords^[1], coords^[40], coords^[41]) / w;
+    a1 := getDistance(coords^[8], coords^[9], coords^[16], coords^[17]) / w;
+    b1 := getDistance(coords^[8], coords^[9], coords^[24], coords^[25]) / w;
+    c1 := getDistance(coords^[8], coords^[9], coords^[32], coords^[33]) / w;
+    d1 := getDistance(coords^[8], coords^[9], coords^[40], coords^[41]) / w;
+    if a < clickCoef then gesture := gesture or 1;
+    if b / 4 < clickCoef then gesture := gesture or 2;
+    if c / 5 < clickCoef then gesture := gesture or 4;
+    if d / 5 < clickCoef then gesture := gesture or 8;
+    if e / 5 < clickCoef then gesture := gesture or 16;
+    if a1 < clickCoef then gesture := gesture or 32;
+    if b1 < clickCoef then gesture := gesture or 64;
+    if c1 < clickCoef then gesture := gesture or 128;
+    if d1 < clickCoef then gesture := gesture or 256;
+    if (gesture = 272) and canExecute(500) then changeMode;
+    if controlOn then
+      begin
+      case gesture of
+        32, 33:
+        begin
+          if canExecute(300) then
+          begin
+            leftClick();
+          end
+        end;
+        2{, 65, 68}:
+        begin
+          if canExecute(300) then
+          begin
+            rightClick();
+          end
+        end;
+        96, 97:
+        begin
+          if canExecute(300) then
+          begin
+            dragClick();
+          end
+        end;
+        31:
+        begin
+          if canExecute(300) then
+          begin
+            minimazeWindows();
+          end
+        end;
+        30:
+        begin
+          if r < 0 then
+          begin
+          if canExecute(100) then
+          begin
+            moreVolume;
+          end
+          end
+          else
+          begin
+          if canExecute(100) then
+          begin
+            lessVolume;
+          end
+          end;
+        end;
+        28:
+        begin
+          if Form2.Visible and canExecute(500) then
+          begin
+            Form2.Hide
+          end
+          else
+          begin
+            if canExecute(700) then
+            begin
+              Form2.Show;
+              Form2.BringToFront;
+            end;
+          end;
+        end;
+        92:
+        begin
+          if canExecute(1000) then
+          begin
+            muteVolume;
+          end;
+        end;
+        12:
+        begin
+          if canExecute(1000) then
+
+          switchScreen;
+        end;
+      end;
+    end;
+  end;
+  Result := pyEngine.Py_None;
+  pyEngine.Py_INCREF(Result);
+end;
+
+function leftDoubleClick(Self, Args:PPyObject):PPyObject;cdecl;
+var pyEngine:TPythonEngine;
+begin
+  pyEngine := GetPythonEngine;
+  if controlOn then
+  begin
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
+    mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0);
+  end;
+  Result := pyEngine.Py_None;
+  pyEngine.Py_INCREF(Result);
+end;
+procedure TForm2.Button1Click(Sender: TObject);
+begin
+  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.jpg'), nil, nil, SW_SHOWNORMAL);
+end;
+procedure TForm2.Button2Click(Sender: TObject);
+var
+  status: PyGILState_STATE;
+begin
+  currentCameraNum := currentCameraNum + 1;
+  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
+  Button2.Caption := cameras[currentCameraNum];
+  status := PythonEngine1.PyGILState_Ensure;
+  PythonEngine1.ExecString('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum));
+  PythonEngine1.PyGILState_Release(status);
+end;
+procedure TForm2.CheckBox1Click(Sender: TObject);
+begin
+  controlOn := CheckBox1.checked;
+end;
+
+procedure TForm2.FormClose(Sender: TObject; var Action: TCloseAction);
+var Ini:TIniFile;
+status: PyGILState_STATE;
+begin
+  if Assigned(pythonTheard) then
+  begin
+    status := PythonEngine1.PyGILState_Ensure;
+    PythonEngine1.ExecString('import air_mouse; air_mouse.stop_thread = True');
+    PythonEngine1.PyGILState_Release(status);
+    pythonTheard.Terminate;
+    pythonTheard.WaitFor;
+    FreeAndNil(pythonTheard);
+  end;
+  Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
+  Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
+  Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
+  Ini.WriteString('settings', 'clickCoef', FloatToStr(clickCoef));
+  Ini.WriteString('settings', 'controlOn', BoolToStr(controlOn));
+  Ini.Free;
+end;
+
+procedure TForm2.FormCreate(Sender: TObject);
+var Ini:TIniFile;
+begin
+  PythonEngine1.UseLastKnownVersion := False;
+  PythonEngine1.DllPath := ExtractFilePath(Application.ExeName) + 'python_env\';
+  PythonEngine1.SetPythonHome(ExtractFilePath(Application.ExeName) + 'python_env\');
+  PythonEngine1.LoadDll;
+  Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
+  smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
+  normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
+  clickCoef := StrToFloat(Ini.ReadString('settings', 'clickCoef', '0.2'));
+  controlOn := StrToBool(Ini.ReadString('settings', 'controlOn', '0'));
+  Ini.Free;
+  CheckBox1.Checked := controlOn;
+  TrackBar1.Position := Round((1 - smoothCoef) * 20);
+  TrackBar2.Position := Round(normalCoef * 60);
+  TrackBar3.Position := Round(clickCoef * 20);
+  Left := Screen.Width - Width;
+  Top := Screen.WorkAreaHeight - Height;
+  currentCameraNum := 0;
+  getCameras;
+  if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
+  else Button2.Caption := 'Not founded';
+  PythonEngine1.PyEval_SaveThread;
+  pythonTheard := TMyPythonThread.Create(false);
+end;
+
+procedure TForm2.PythonModule1Initialization(Sender: TObject);
+begin
+  PythonModule1.AddMethod('set_coords', setCoords, 'set coord');
+end;
+
+procedure TForm2.TrackBar1Change(Sender: TObject);
+begin
+  Label3.Caption := FloatToStr(TrackBar1.Position / 20) + ' smooth';
+  smoothCoef := 1 - TrackBar1.Position / 20;
+end;
+procedure TForm2.TrackBar2Change(Sender: TObject);
+begin
+  Label4.Caption := FloatToStr(TrackBar2.Position / 20) + ' normalization';
+  normalCoef := TrackBar2.Position / 60;
+end;
+procedure TForm2.TrackBar3Change(Sender: TObject);
+begin
+  Label5.Caption := FloatToStr(TrackBar3.Position / 20) + ' click';
+  clickCoef := TrackBar3.Position / 20;
+end;
+end.

@@ -13,7 +13,7 @@ hand = detectHand.Hands(
     static_image_mode = False,
     max_num_hands = 1,
     model_complexity = 0,
-    min_detection_confidence = 0.7,
+    min_detection_confidence = 0.5,
     min_tracking_confidence = 0.4,
 )
 cap = cv2.VideoCapture(camera_index)
@@ -33,6 +33,9 @@ while not air_mouse.stop_thread:
     ret, frame = cap.read()
     if not(ret):continue
     frame = cv2.flip(frame, 1)
+    #Перемикання режиму
+    #cv2.imshow("frame", frame)
+    #cv2.waitKey(1)
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame.flags.writeable = False
     res = hand.process(frame)
