@@ -287,7 +287,7 @@ begin
 end;
 procedure TForm2.Button1Click(Sender: TObject);
 begin
-  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.jpg'), nil, nil, SW_SHOWNORMAL);
+  ShellExecute(0, 'open', Pchar(ExtractFilePath(Application.ExeName) + 'testPhoto.png'), nil, nil, SW_SHOWNORMAL);
 end;
 procedure TForm2.Button2Click(Sender: TObject);
 var
@@ -318,6 +318,7 @@ begin
     pythonTheard.WaitFor;
     FreeAndNil(pythonTheard);
   end;
+  {currentCameraNum := StrToInt(Ini.ReadString('settings', 'currentCameraNum', '0'));}
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
@@ -334,6 +335,7 @@ begin
   PythonEngine1.SetPythonHome(ExtractFilePath(Application.ExeName) + 'python_env\');
   PythonEngine1.LoadDll;
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
+  currentCameraNum := StrToInt(Ini.ReadString('settings', 'currentCameraNum', '0'));
   smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
   normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
   clickCoef := StrToFloat(Ini.ReadString('settings', 'clickCoef', '0.2'));
@@ -345,8 +347,8 @@ begin
   TrackBar3.Position := Round(clickCoef * 20);
   Left := Screen.Width - Width;
   Top := Screen.WorkAreaHeight - Height;
-  currentCameraNum := 0;
   getCameras;
+  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
   if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
   else Button2.Caption := 'Not founded';
   PythonEngine1.PyEval_SaveThread;

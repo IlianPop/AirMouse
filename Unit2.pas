@@ -323,17 +323,23 @@ begin
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
   Ini.WriteString('settings', 'clickCoef', FloatToStr(clickCoef));
   Ini.WriteString('settings', 'controlOn', BoolToStr(controlOn));
+  Ini.WriteString('settings', 'currentCameraNum', IntToStr(currentCameraNum));
   Ini.Free;
 end;
 
 procedure TForm2.FormCreate(Sender: TObject);
-var Ini:TIniFile;
+var
+  Ini:TIniFile;
+  status: PyGILState_STATE;
 begin
   PythonEngine1.UseLastKnownVersion := False;
   PythonEngine1.DllPath := ExtractFilePath(Application.ExeName) + 'python_env\';
   PythonEngine1.SetPythonHome(ExtractFilePath(Application.ExeName) + 'python_env\');
   PythonEngine1.LoadDll;
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
+  currentCameraNum := StrToInt(Ini.ReadString('settings', 'currentCameraNum', '0'));
+  getCameras;
+  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
   smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
   normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
   clickCoef := StrToFloat(Ini.ReadString('settings', 'clickCoef', '0.2'));
@@ -345,12 +351,13 @@ begin
   TrackBar3.Position := Round(clickCoef * 20);
   Left := Screen.Width - Width;
   Top := Screen.WorkAreaHeight - Height;
-  currentCameraNum := 0;
-  getCameras;
   if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
   else Button2.Caption := 'Not founded';
   PythonEngine1.PyEval_SaveThread;
   pythonTheard := TMyPythonThread.Create(false);
+  status := PythonEngine1.PyGILState_Ensure;
+  PythonEngine1.ExecString('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum));
+  PythonEngine1.PyGILState_Release(status);
 end;
 
 procedure TForm2.PythonModule1Initialization(Sender: TObject);
