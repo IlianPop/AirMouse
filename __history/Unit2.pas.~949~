@@ -3,7 +3,7 @@ unit Unit2;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, System.Devices, Vcl.Graphics,
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Generics.Collections, System.UITypes, System.Variants, System.Classes, System.Devices, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, PythonEngine, Math, IniFiles, FMX.Media,
   Vcl.PythonGUIInputOutput, Vcl.ComCtrls, ShellAPI;
 type
@@ -32,6 +32,7 @@ type
     procedure CheckBox1Click(Sender: TObject);
   private
     { Private declarations }
+    procedure PyCriticalError(Sender: TObject; E: Exception);
   public
     { Public declarations }
   end;
@@ -57,6 +58,20 @@ var
 implementation
 
 {$R *.dfm}
+procedure TForm2.PyCriticalError(Sender: TObject; E: Exception);
+begin
+  if E is EPyException then
+  begin
+    TThread.Queue(nil, procedure
+    begin
+      MessageDlg('Errore! ' + E.Message, mtError, [mbok], 0);
+    end)
+  end
+  else
+  begin
+    Application.ShowException(E);
+  end;
+end;
 procedure TMyPythonThread.ExecuteWithPython;
 var pyEngine:TPythonEngine;
 begin
@@ -80,7 +95,7 @@ begin
   screenNum := screenNum + 1;
   if Screen.MonitorCount = screenNum then screenNum := 0;
 end;
-function canExecute(delayMs: Integer):Boolean;
+function canExecute(delayMs: Cardinal):Boolean;
 begin
   Result := GetTickCount - lastGestureTime > delayMs;
   if Result then lastGestureTime := GetTickCount;
@@ -293,12 +308,15 @@ procedure TForm2.Button2Click(Sender: TObject);
 var
   status: PyGILState_STATE;
 begin
-  currentCameraNum := currentCameraNum + 1;
-  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
-  Button2.Caption := cameras[currentCameraNum];
-  status := PythonEngine1.PyGILState_Ensure;
-  PythonEngine1.ExecString('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum));
-  PythonEngine1.PyGILState_Release(status);
+  if Length(cameras) > 0 then
+  begin
+    currentCameraNum := currentCameraNum + 1;
+    if currentCameraNum = Length(cameras) then currentCameraNum := 0;
+    Button2.Caption := cameras[currentCameraNum];
+    status := PythonEngine1.PyGILState_Ensure;
+    PythonEngine1.ExecString(PChar('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum)));
+    PythonEngine1.PyGILState_Release(status);
+  end;
 end;
 procedure TForm2.CheckBox1Click(Sender: TObject);
 begin
@@ -318,25 +336,29 @@ begin
     pythonTheard.WaitFor;
     FreeAndNil(pythonTheard);
   end;
-  {currentCameraNum := StrToInt(Ini.ReadString('settings', 'currentCameraNum', '0'));}
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
   Ini.WriteString('settings', 'normalCoef', FloatToStr(normalCoef));
   Ini.WriteString('settings', 'clickCoef', FloatToStr(clickCoef));
   Ini.WriteString('settings', 'controlOn', BoolToStr(controlOn));
-  Ini.WriteString('settings', 'smoothCoef', FloatToStr(smoothCoef));
+  Ini.WriteString('settings', 'currentCameraNum', IntToStr(currentCameraNum));
   Ini.Free;
 end;
 
 procedure TForm2.FormCreate(Sender: TObject);
-var Ini:TIniFile;
+var
+  Ini:TIniFile;
+  status: PyGILState_STATE;
 begin
   PythonEngine1.UseLastKnownVersion := False;
   PythonEngine1.DllPath := ExtractFilePath(Application.ExeName) + 'python_env\';
   PythonEngine1.SetPythonHome(ExtractFilePath(Application.ExeName) + 'python_env\');
+  Application.OnException := PyCriticalError;
   PythonEngine1.LoadDll;
   Ini := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'setings.ini');
   currentCameraNum := StrToInt(Ini.ReadString('settings', 'currentCameraNum', '0'));
+  getCameras;
+  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
   smoothCoef := StrToFloat(Ini.ReadString('settings', 'smoothCoef', '0.2'));
   normalCoef := StrToFloat(Ini.ReadString('settings', 'normalCoef', '0.2'));
   clickCoef := StrToFloat(Ini.ReadString('settings', 'clickCoef', '0.2'));
@@ -348,12 +370,13 @@ begin
   TrackBar3.Position := Round(clickCoef * 20);
   Left := Screen.Width - Width;
   Top := Screen.WorkAreaHeight - Height;
-  getCameras;
-  if currentCameraNum = Length(cameras) then currentCameraNum := 0;
   if Length(cameras) > 0 then Button2.Caption := cameras[currentCameraNum]
-  else Button2.Caption := 'Not founded';
+  else Button2.Caption := 'Not found';
   PythonEngine1.PyEval_SaveThread;
   pythonTheard := TMyPythonThread.Create(false);
+  status := PythonEngine1.PyGILState_Ensure;
+  PythonEngine1.ExecString('import air_mouse; air_mouse.camera_index = ' + IntToStr(currentCameraNum));
+  PythonEngine1.PyGILState_Release(status);
 end;
 
 procedure TForm2.PythonModule1Initialization(Sender: TObject);
